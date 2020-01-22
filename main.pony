@@ -17,6 +17,7 @@ actor Main
     fun synchronous_demo() =>
         _env.out.print("synchronous...")
         let sw1 = Stopwatch
+        // calculate the results in sequence
         with l = Lua do
             var count: I32 = max_num
             while count >= 0 do
@@ -30,7 +31,9 @@ actor Main
         _env.out.print("asynchronous...")
         var count: I32 = max_num
         var sw2 = Stopwatch
+        // to collect all asynchronous result promises
         let results = Array[Promise[String]]
+        // create the result promises
         while count >= 0 do
             let al = LuaAsync
             let p = Promise[String]
@@ -41,10 +44,11 @@ actor Main
         // wait for all results
         Promises[String].join(results.values())
             .next[None]({(a: Array[String val] val) =>
+                // print all values at once in the order received
                 for s in a.values() do
                     _env.out.print(s)
                 end
-                Time.nanos()
+                // done
                 _env.out.print("--> elapsed seconds: "+sw2.elapsedSeconds().string())
             })
 
@@ -64,13 +68,45 @@ actor LuaAsync
 class Lua
     var _l: Pointer[None] = Pointer[None]
 
-    new create() =>
-        _l = @luaL_newstate[Pointer[None]]()
-        if @luaL_openlibs[I32]( _l ) != 0 then
-            Debug.err("luaL_openlibs error")
+    fun ref fibonacci(n: I32): String =>
+        (var res, var err) = run_string("return fibonacci("+n.string()+")")
+
+        if err != "" then
+            err
+        else
+            res
         end
 
-        if @luaL_loadstring[I32]( _l, "
+    fun ref top_string(default: String): String =>
+        var res: Pointer[U8] val = @luaL_checklstring[Pointer[U8] val](_l, I32(-1), Pointer[None])
+        var s = recover String.copy_cstring(res) end
+        if s == "" then
+            default
+        else
+            s
+        end
+
+    // returns result, error
+    fun ref run_string(code: String): (String, String) =>
+        if @luaL_loadstring[I32]( _l, code.cstring() ) != 0 then
+            return ("", top_string("luaL_loadstring error"))
+        end
+
+        if @lua_pcallk[I32]( _l, I32(0), I32(1), I32(0), I32(0), Pointer[None]) != 0 then
+            return ("", top_string("lua_pcallk error"))
+        end
+
+        let res = top_string("")
+        if res == "" then
+            ("", "could not fetch the result")
+        else
+            (res, "")
+        end
+
+    new create() =>
+        _l = @luaL_newstate[Pointer[None]]()
+
+        (var res, var err) = run_string("
             -- http://progopedia.com/example/fibonacci/37/
             function fibonacci(n)
                 if n<3 then
@@ -79,30 +115,12 @@ class Lua
                     return fibonacci(n-1) + fibonacci(n-2)
                 end
             end
-            ".cstring() ) != 0 then
 
-            Debug.err("luaL_loadstring error")
+            return 'ok'
+        ")
+        if err != "" then
+            Debug.err(err)
         end
-
-        if @lua_pcallk[I32]( _l, I32(0), I32(1), I32(0), I32(0), Pointer[None]) != 0 then
-            var err: Pointer[U8] val = @luaL_checklstring[Pointer[U8] val](_l, I32(-1), Pointer[None])
-            Debug.out(recover String.copy_cstring(err) end)
-        end
-
-    fun ref fibonacci(n: I32): String =>
-        if @luaL_loadstring[I32]( _l, ("return fibonacci("+n.string()+")").cstring() ) != 0 then
-            return "luaL_loadstring error"
-        end
-
-        if @lua_pcallk[I32]( _l, I32(0), I32(1), I32(0), I32(0), Pointer[None]) != 0 then
-            // return "lua_pcallk error"
-            var err: Pointer[U8] val = @luaL_checklstring[Pointer[U8] val](_l, I32(-1), Pointer[None])
-            return recover String.copy_cstring(err) end
-        end
-
-        // return the result as a string
-        var res: Pointer[U8] val = @luaL_checklstring[Pointer[U8] val](_l, I32(-1), Pointer[None])
-        recover String.copy_cstring(res) end
 
     fun dispose() =>
         @lua_close[I32](_l)
