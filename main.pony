@@ -5,20 +5,29 @@ use "promises"
 use "time"
 
 actor Main
+    let _env: Env
+    let max_num: I32 = 40
+
     new create(env: Env) =>
-        let max_num:I32 = 40
-        env.out.print("synchronous...")
+        _env = env
+
+        synchronous_demo()
+        asynchronous_demo()
+
+    fun synchronous_demo() =>
+        _env.out.print("synchronous...")
         let sw1 = Stopwatch
         with l = Lua do
             var count: I32 = max_num
             while count >= 0 do
-                env.out.print("fibonacci("+count.string()+")="+l.fibonacci(count).string())
+                _env.out.print("fibonacci("+count.string()+")="+l.fibonacci(count).string())
                 count = count - 1
             end
         end
-        env.out.print("elapsed seconds: "+sw1.elapsedSeconds().string())
+        _env.out.print("--> elapsed seconds: "+sw1.elapsedSeconds().string())
 
-        env.out.print("asynchronous...")
+    fun asynchronous_demo() =>
+        _env.out.print("asynchronous...")
         var count: I32 = max_num
         var sw2 = Stopwatch
         let results = Array[Promise[String]]
@@ -26,9 +35,6 @@ actor Main
             let al = LuaAsync
             let p = Promise[String]
             al.fibonacci(count, p)
-            // p.next[None]({(res: String) =>
-            //     env.out.print(res)
-            // })
             results.push(p)
             count = count - 1
         end
@@ -36,13 +42,13 @@ actor Main
         Promises[String].join(results.values())
             .next[None]({(a: Array[String val] val) =>
                 for s in a.values() do
-                    env.out.print(s)
+                    _env.out.print(s)
                 end
                 Time.nanos()
-                env.out.print("elapsed seconds: "+sw2.elapsedSeconds().string())
+                _env.out.print("--> elapsed seconds: "+sw2.elapsedSeconds().string())
             })
 
-        env.out.print("main: done, waiting for quiescense")
+        _env.out.print("main: done, waiting for promises")
 
 
 actor LuaAsync
@@ -51,6 +57,9 @@ actor LuaAsync
     // https://patterns.ponylang.io/async/actorpromise.html
     be fibonacci(n: I32, p: Promise[String]) =>
         p("fibonacci("+n.string()+")="+_l.fibonacci(n).string())
+
+    fun _final() =>
+        _l.dispose()
 
 class Lua
     var _l: Pointer[None] = Pointer[None]
@@ -95,10 +104,8 @@ class Lua
         var res: Pointer[U8] val = @luaL_checklstring[Pointer[U8] val](_l, I32(-1), Pointer[None])
         recover String.copy_cstring(res) end
 
-    fun ref dispose() =>
+    fun dispose() =>
         @lua_close[I32](_l)
-        _l = Pointer[None]
-        Debug.out("Closing Lua state")
 
 class val Stopwatch
     var _t1: U64
