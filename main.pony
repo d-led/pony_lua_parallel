@@ -2,11 +2,13 @@ use "path:./deps/lua/windows" if windows
 use "lib:lua53"
 use "debug"
 use "promises"
+use "time"
 
 actor Main
     new create(env: Env) =>
-        let max_num:I32 = 39
+        let max_num:I32 = 40
         env.out.print("synchronous...")
+        let sw1 = Stopwatch
         with l = Lua do
             var count: I32 = max_num
             while count >= 0 do
@@ -14,18 +16,34 @@ actor Main
                 count = count - 1
             end
         end
+        env.out.print("elapsed seconds: "+sw1.elapsedSeconds().string())
 
         env.out.print("asynchronous...")
         var count: I32 = max_num
+        var sw2 = Stopwatch
+        let results = Array[Promise[String]]
         while count >= 0 do
             let al = LuaAsync
             let p = Promise[String]
             al.fibonacci(count, p)
-            p.next[None]({(res: String) =>
-                env.out.print(res)
-            })
+            // p.next[None]({(res: String) =>
+            //     env.out.print(res)
+            // })
+            results.push(p)
             count = count - 1
         end
+        // wait for all results
+        Promises[String].join(results.values())
+            .next[None]({(a: Array[String val] val) =>
+                for s in a.values() do
+                    env.out.print(s)
+                end
+                Time.nanos()
+                env.out.print("elapsed seconds: "+sw2.elapsedSeconds().string())
+            })
+
+        env.out.print("main: done, waiting for quiescense")
+
 
 actor LuaAsync
     let _l: Lua = Lua
@@ -82,3 +100,12 @@ class Lua
         _l = Pointer[None]
         Debug.out("Closing Lua state")
 
+class val Stopwatch
+    var _t1: U64
+
+    new val create() =>
+        _t1 = Time.nanos()
+
+    fun elapsedSeconds() : F64 =>
+        let t2: U64 = Time.nanos()
+        (t2-_t1).f64()/1000000000.0
