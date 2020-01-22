@@ -4,9 +4,14 @@ use "debug"
 
 actor Main
     new create(env: Env) =>
+        let max_num:I32 = 39
+        env.out.print("synchronous...")
         with l = Lua do
-            env.out.print(l.fibonacci(40))
-            env.out.print("end")
+            var count: I32 = max_num
+            while count >= 0 do
+                env.out.print("fibonacci("+count.string()+")="+l.fibonacci(count).string())
+                count = count - 1
+            end
         end
 
 class Lua
