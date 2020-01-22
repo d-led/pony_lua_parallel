@@ -390,3 +390,4 @@ MigrationBackup/
 *.exp
 ./*.dll
 *.exe
+pony_lua_parallel

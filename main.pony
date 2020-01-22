@@ -1,4 +1,5 @@
 use "path:./deps/lua/windows" if windows
+use "path:./deps/lua/linux" if linux
 use "lib:lua53"
 use "debug"
 use "promises"
