@@ -1,7 +1,7 @@
 FROM ponylang/ponyc:release
 
 COPY . /src/main/
-WORKDIR /src/main/test
+WORKDIR /src/main
 RUN stable env ponyc
-RUN ./test
-CMD ./test
+RUN ./main
+CMD ./main
