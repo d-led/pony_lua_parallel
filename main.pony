@@ -14,6 +14,25 @@ actor Main
             end
         end
 
+        env.out.print("asynchronous...")
+        var count: I32 = max_num
+        while count >= 0 do
+            let al = LuaAsync(env)
+            al.fibonacci(count)
+            count = count - 1
+        end
+
+actor LuaAsync
+    let _env: Env
+    let _l: Lua = Lua
+
+    new create(env: Env) =>
+        _env = env
+
+    be fibonacci(n: I32) =>
+        _env.out.print("fibonacci("+n.string()+")="+_l.fibonacci(n).string())
+        // to do: Promise the result
+
 class Lua
     var _l: Pointer[None] = Pointer[None]
 
