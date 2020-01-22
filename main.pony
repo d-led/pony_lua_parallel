@@ -52,8 +52,8 @@ class Lua
         var res: Pointer[U8] val = @luaL_checklstring[Pointer[U8] val](_l, I32(-1), Pointer[None])
         recover String.copy_cstring(res) end
 
-    fun dispose() =>
-        // to do: close lua state
+    fun ref dispose() =>
+        @lua_close[I32](_l)
+        _l = Pointer[None]
         Debug.out("Closing Lua state")
-//    dMob->name = strdup( luaL_checkstring( L, -1 ) );
-//    lua_pop( L, 1 );
+
