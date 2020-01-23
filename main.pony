@@ -15,8 +15,8 @@ actor Main
         _env = env
 
         configure()
-        synchronous_demo()
-        asynchronous_demo()
+        // synchronous_demo()
+        // asynchronous_demo()
         c_code_calling_pony_demo()
 
     fun ref configure() =>
@@ -154,11 +154,6 @@ class Lua
         @lua_pushlightuserdata[None](_l, this)
         @lua_setglobal[None](_l, "this".cstring())
 
-        // getting the pointer back
-        @lua_getglobal[I32](_l, "this".cstring())
-        let new_l = @lua_touserdata[Lua](_l, @lua_gettop[I32](_l))
-        new_l.canary()
-
     fun canary() =>
         Debug.out("canary")
 
@@ -166,8 +161,9 @@ class Lua
         _cb.update(name, callback)
         @lua_pushcclosure[None](_l, @{(l: Pointer[None]) =>
             Debug.out("callback called")
-            let recovered_lua = @lua_touserdata[Lua](_l, @lua_gettop[I32](_l))
-            recovered_lua.callback()
+            @lua_getglobal[I32](l, "this".cstring())
+            let recovered_lua = @lua_touserdata[Lua](l, @lua_gettop[I32](l))
+            recovered_lua.canary()
         }, I32(0))
         @lua_setglobal[None](_l, name.cstring())
 
