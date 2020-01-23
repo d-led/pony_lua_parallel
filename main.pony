@@ -5,6 +5,7 @@ use "debug"
 use "promises"
 use "time"
 use "cli"
+use "collections"
 
 actor Main
     let _env: Env
@@ -16,6 +17,7 @@ actor Main
         configure()
         synchronous_demo()
         asynchronous_demo()
+        c_code_calling_pony_demo()
 
     fun ref configure() =>
         try
@@ -62,6 +64,16 @@ actor Main
 
         _env.out.print("main: done, waiting for promises")
 
+    fun c_code_calling_pony_demo() =>
+        _env.out.print("calling pony from lua")
+        let l = Lua
+        l.register_function("test", {(_l: Pointer[None]): I32 =>
+            _env.out.print("Pony called from Lua")
+            0
+        })
+        l.run_string("test() return 'ok'")
+
+
 
 actor LuaAsync
     let _l: Lua = Lua
@@ -73,8 +85,11 @@ actor LuaAsync
     fun _final() =>
         _l.dispose()
 
+type LuaCallback is {(Pointer[None]): I32}
+
 class Lua
     var _l: Pointer[None] = Pointer[None]
+    var _cb: Map[String, LuaCallback] = Map[String, LuaCallback]
 
     fun ref fibonacci(n: I32): String =>
         (var res, var err) = run_string("return fibonacci("+n.string()+")")
@@ -114,6 +129,10 @@ class Lua
     new create() =>
         _l = @luaL_newstate[Pointer[None]]()
 
+        if @luaL_openlibs[I32]( _l ) != 0 then
+            Debug.err("luaL_openlibs error")
+        end
+
         (var res, var err) = run_string("
             -- http://progopedia.com/example/fibonacci/37/
             function fibonacci(n)
@@ -130,8 +149,54 @@ class Lua
             Debug.err(err)
         end
 
+        // global is ok here, as the Lua object is not shared among actors
+        // although, the callbacks will for the moment get access to the raw Lua state
+        @lua_pushlightuserdata[None](_l, this)
+        @lua_setglobal[None](_l, "this".cstring())
+
+    fun callback(name: String, l: Pointer[None]): I32 =>
+        try
+            _cb(name)?(l)
+        else
+            Debug.err("Error running: " + name)
+            0
+        end
+
+    fun ref register_function(name: String, cb: LuaCallback) =>
+        _cb.update(name, cb)
+        @lua_pushstring[None](_l, name.cstring())
+        @lua_pushcclosure[None](_l, @{(l: Pointer[None]): I32 =>
+            Debug.out("callback called")
+            // https://github.com/lua/lua/blob/d7bb8df8414f71a290c8a4b1c9f7c6fe839a94df/lua.h#L44
+            let l_LUAI_MAXSTACK: I32 = 1000000
+            let l_LUA_REGISTRYINDEX: I32 = (-l_LUAI_MAXSTACK - 1000)
+            let lua_upvalueindex: I32 = l_LUA_REGISTRYINDEX - 1
+            let name: String val = recover String.copy_cstring(@lua_tolstring[Pointer[U8]](l,lua_upvalueindex, Pointer[None])) end
+            if name == "" then
+                Debug.err("could not correlate the callback to a Pony function")
+                return 0
+            end
+            @lua_getglobal[I32](l, "this".cstring())
+            let recovered_lua = @lua_touserdata[Lua](l, @lua_gettop[I32](l))
+            recovered_lua.callback(name, l)
+        }, I32(1)) // 1 == 1 closure value
+        @lua_setglobal[None](_l, name.cstring())
+
     fun dispose() =>
         @lua_close[I32](_l)
+
+// incomplete
+struct LuaDebug
+  var event: I32 = 0
+  var name: Pointer[U8] = Pointer[U8]
+  var namewhat: Pointer[U8] = Pointer[U8]
+  var what: Pointer[U8] = Pointer[U8]
+  var source: Pointer[U8] = Pointer[U8]
+// int event;
+//   const char *name;	/* (n) */
+//   const char *namewhat;	/* (n) 'global', 'local', 'field', 'method' */
+//   const char *what;	/* (S) 'Lua', 'C', 'main', 'tail' */
+//   const char *source;	/* (S) */
 
 class val Stopwatch
     var _t1: U64
