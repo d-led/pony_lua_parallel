@@ -15,8 +15,8 @@ actor Main
         _env = env
 
         configure()
-        // synchronous_demo()
-        // asynchronous_demo()
+        synchronous_demo()
+        asynchronous_demo()
         c_code_calling_pony_demo()
 
     fun ref configure() =>
@@ -154,7 +154,7 @@ class Lua
         @lua_pushlightuserdata[None](_l, this)
         @lua_setglobal[None](_l, "this".cstring())
 
-    fun ref callback(name: String val, l: Pointer[None]): I32 =>
+    fun callback(name: String, l: Pointer[None]): I32 =>
         try
             _cb(name)?(l)
         else
@@ -171,12 +171,14 @@ class Lua
             let l_LUAI_MAXSTACK: I32 = 1000000
             let l_LUA_REGISTRYINDEX: I32 = (-l_LUAI_MAXSTACK - 1000)
             let lua_upvalueindex: I32 = l_LUA_REGISTRYINDEX - 1
-            let name = String.from_cstring(@lua_tolstring[Pointer[U8]](l,lua_upvalueindex, Pointer[None]))
+            let name: String val = recover String.copy_cstring(@lua_tolstring[Pointer[U8]](l,lua_upvalueindex, Pointer[None])) end
+            if name == "" then
+                Debug.err("could not correlate the callback to a Pony function")
+                return 0
+            end
             @lua_getglobal[I32](l, "this".cstring())
             let recovered_lua = @lua_touserdata[Lua](l, @lua_gettop[I32](l))
-            // to do: recover name
-            // recovered_lua.callback(name, l)
-            0
+            recovered_lua.callback(name, l)
         }, I32(1)) // 1 == 1 closure value
         @lua_setglobal[None](_l, name.cstring())
 
