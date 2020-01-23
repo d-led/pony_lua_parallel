@@ -16,6 +16,7 @@ actor Main
         configure()
         synchronous_demo()
         asynchronous_demo()
+        c_code_calling_pony_demo()
 
     fun ref configure() =>
         try
@@ -61,6 +62,15 @@ actor Main
             })
 
         _env.out.print("main: done, waiting for promises")
+
+    fun c_code_calling_pony_demo() =>
+        _env.out.print("enabling tracing via callbacks")
+        let l = Lua
+        l.set_hook(@{(l: Pointer[None], deb: Pointer[LuaDebug]) =>
+            // _env.out.print("hook called")
+            None
+        })
+        l.run_string("return fibonacci(4)")
 
 
 actor LuaAsync
@@ -111,6 +121,9 @@ class Lua
             (res, "")
         end
 
+    fun ref set_hook(hook: @{(Pointer[None], Pointer[LuaDebug]): None}) =>
+        @lua_sethook[None](_l, hook, I32(0), I32(10))
+
     new create() =>
         _l = @luaL_newstate[Pointer[None]]()
 
@@ -132,6 +145,19 @@ class Lua
 
     fun dispose() =>
         @lua_close[I32](_l)
+
+// incomplete
+struct LuaDebug
+  var event: I32 = 0
+  var name: Pointer[U8] = Pointer[U8]
+  var namewhat: Pointer[U8] = Pointer[U8]
+  var what: Pointer[U8] = Pointer[U8]
+  var source: Pointer[U8] = Pointer[U8]
+// int event;
+//   const char *name;	/* (n) */
+//   const char *namewhat;	/* (n) 'global', 'local', 'field', 'method' */
+//   const char *what;	/* (S) 'Lua', 'C', 'main', 'tail' */
+//   const char *source;	/* (S) */
 
 class val Stopwatch
     var _t1: U64
