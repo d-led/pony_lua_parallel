@@ -4,4 +4,4 @@ services:
   - docker
 
 script:
-  - docker-compose build
+  - docker-compose build --build-arg MAX_NUM=10

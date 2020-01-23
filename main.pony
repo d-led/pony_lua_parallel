@@ -4,16 +4,23 @@ use "lib:lua53"
 use "debug"
 use "promises"
 use "time"
+use "cli"
 
 actor Main
     let _env: Env
-    let max_num: I32 = 40
+    var max_num: I32 = 40
 
     new create(env: Env) =>
         _env = env
 
+        configure()
         synchronous_demo()
         asynchronous_demo()
+
+    fun ref configure() =>
+        try
+            max_num = EnvVars(_env.vars)("MAX_NUM")?.i32()?
+        end
 
     fun synchronous_demo() =>
         _env.out.print("synchronous...")
