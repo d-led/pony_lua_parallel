@@ -154,17 +154,30 @@ class Lua
         @lua_pushlightuserdata[None](_l, this)
         @lua_setglobal[None](_l, "this".cstring())
 
-    fun canary() =>
-        Debug.out("canary")
+    fun ref callback(name: String val, l: Pointer[None]): I32 =>
+        try
+            _cb(name)?(l)
+        else
+            Debug.err("Error running: " + name)
+            0
+        end
 
-    fun ref register_function(name: String, callback: LuaCallback) =>
-        _cb.update(name, callback)
-        @lua_pushcclosure[None](_l, @{(l: Pointer[None]) =>
+    fun ref register_function(name: String, cb: LuaCallback) =>
+        _cb.update(name, cb)
+        @lua_pushstring[None](_l, name.cstring())
+        @lua_pushcclosure[None](_l, @{(l: Pointer[None]): I32 =>
             Debug.out("callback called")
+            // https://github.com/lua/lua/blob/d7bb8df8414f71a290c8a4b1c9f7c6fe839a94df/lua.h#L44
+            let l_LUAI_MAXSTACK: I32 = 1000000
+            let l_LUA_REGISTRYINDEX: I32 = (-l_LUAI_MAXSTACK - 1000)
+            let lua_upvalueindex: I32 = l_LUA_REGISTRYINDEX - 1
+            let name = String.from_cstring(@lua_tolstring[Pointer[U8]](l,lua_upvalueindex, Pointer[None]))
             @lua_getglobal[I32](l, "this".cstring())
             let recovered_lua = @lua_touserdata[Lua](l, @lua_gettop[I32](l))
-            recovered_lua.canary()
-        }, I32(0))
+            // to do: recover name
+            // recovered_lua.callback(name, l)
+            0
+        }, I32(1)) // 1 == 1 closure value
         @lua_setglobal[None](_l, name.cstring())
 
     fun dispose() =>
