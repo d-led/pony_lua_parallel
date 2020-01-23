@@ -6,6 +6,7 @@ use "promises"
 use "time"
 use "cli"
 use "collections"
+use "math"
 
 actor Main
     let _env: Env
@@ -67,11 +68,14 @@ actor Main
     fun c_code_calling_pony_demo() =>
         _env.out.print("calling pony from lua")
         let l = Lua
-        l.register_function("test", {(_l: Pointer[None]): I32 =>
+        l.register_function("pony_fibonacci", {(_l: Pointer[None]): I32 =>
             _env.out.print("Pony called from Lua")
-            0
+            let res = Fibonacci(10)
+            @lua_pushinteger[None](_l, res.i32())
+            I32(1) // return value count
         })
-        l.run_string("test() return 'ok'")
+        (var res, var err) = l.run_string("return 'pony_fibonacci(10)='..pony_fibonacci(10)")
+        _env.out.print(res+err)
 
 
 
