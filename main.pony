@@ -153,6 +153,14 @@ class Lua
         // (res, err) = run_string("return tostring(this)")
         // Debug.out(res + err)
 
+        // getting the pointer back
+        @lua_getglobal[I32](_l, "this".cstring())
+        let new_l = @lua_touserdata[Lua](_l, @lua_gettop[I32](_l))
+        new_l.canary()
+
+    fun canary() =>
+        Debug.out("canary")
+
     // fun register_function(name: String, callback: {(Pointer[None], Pointer[LuaDebug]): None})
 
     fun dispose() =>
