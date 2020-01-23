@@ -202,19 +202,6 @@ class Lua
     fun dispose() =>
         @lua_close[I32](_l)
 
-// incomplete
-struct LuaDebug
-  var event: I32 = 0
-  var name: Pointer[U8] = Pointer[U8]
-  var namewhat: Pointer[U8] = Pointer[U8]
-  var what: Pointer[U8] = Pointer[U8]
-  var source: Pointer[U8] = Pointer[U8]
-// int event;
-//   const char *name;	/* (n) */
-//   const char *namewhat;	/* (n) 'global', 'local', 'field', 'method' */
-//   const char *what;	/* (S) 'Lua', 'C', 'main', 'tail' */
-//   const char *source;	/* (S) */
-
 class val Stopwatch
     var _t1: U64
 
