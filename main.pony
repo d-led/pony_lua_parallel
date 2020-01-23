@@ -5,6 +5,7 @@ use "debug"
 use "promises"
 use "time"
 use "cli"
+use "collections"
 
 actor Main
     let _env: Env
@@ -64,13 +65,14 @@ actor Main
         _env.out.print("main: done, waiting for promises")
 
     fun c_code_calling_pony_demo() =>
-        _env.out.print("enabling tracing via callbacks")
+        _env.out.print("calling pony from lua")
         let l = Lua
-        l.set_hook(@{(l: Pointer[None], deb: Pointer[LuaDebug]) =>
-            // _env.out.print("hook called")
-            None
+        l.register_function("test", {(_l: Pointer[None]): I32 =>
+            _env.out.print("Pony called from Lua")
+            0
         })
-        l.run_string("return fibonacci(4)")
+        l.run_string("test() return 'ok'")
+
 
 
 actor LuaAsync
@@ -83,8 +85,11 @@ actor LuaAsync
     fun _final() =>
         _l.dispose()
 
+type LuaCallback is {(Pointer[None]): I32}
+
 class Lua
     var _l: Pointer[None] = Pointer[None]
+    var _cb: Map[String, LuaCallback] = Map[String, LuaCallback]
 
     fun ref fibonacci(n: I32): String =>
         (var res, var err) = run_string("return fibonacci("+n.string()+")")
@@ -121,9 +126,6 @@ class Lua
             (res, "")
         end
 
-    fun ref set_hook(hook: @{(Pointer[None], Pointer[LuaDebug]): None}) =>
-        @lua_sethook[None](_l, hook, I32(0), I32(10))
-
     new create() =>
         _l = @luaL_newstate[Pointer[None]]()
 
@@ -148,10 +150,9 @@ class Lua
         end
 
         // global is ok here, as the Lua object is not shared among actors
+        // although, the callbacks will for the moment get access to the raw Lua state
         @lua_pushlightuserdata[None](_l, this)
         @lua_setglobal[None](_l, "this".cstring())
-        // (res, err) = run_string("return tostring(this)")
-        // Debug.out(res + err)
 
         // getting the pointer back
         @lua_getglobal[I32](_l, "this".cstring())
@@ -161,7 +162,14 @@ class Lua
     fun canary() =>
         Debug.out("canary")
 
-    // fun register_function(name: String, callback: {(Pointer[None], Pointer[LuaDebug]): None})
+    fun ref register_function(name: String, callback: LuaCallback) =>
+        _cb.update(name, callback)
+        @lua_pushcclosure[None](_l, @{(l: Pointer[None]) =>
+            Debug.out("callback called")
+            let recovered_lua = @lua_touserdata[Lua](_l, @lua_gettop[I32](_l))
+            recovered_lua.callback()
+        }, I32(0))
+        @lua_setglobal[None](_l, name.cstring())
 
     fun dispose() =>
         @lua_close[I32](_l)
