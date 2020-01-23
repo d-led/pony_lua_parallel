@@ -127,6 +127,10 @@ class Lua
     new create() =>
         _l = @luaL_newstate[Pointer[None]]()
 
+        if @luaL_openlibs[I32]( _l ) != 0 then
+            Debug.err("luaL_openlibs error")
+        end
+
         (var res, var err) = run_string("
             -- http://progopedia.com/example/fibonacci/37/
             function fibonacci(n)
@@ -142,6 +146,14 @@ class Lua
         if err != "" then
             Debug.err(err)
         end
+
+        // global is ok here, as the Lua object is not shared among actors
+        @lua_pushlightuserdata[None](_l, this)
+        @lua_setglobal[None](_l, "this".cstring())
+        // (res, err) = run_string("return tostring(this)")
+        // Debug.out(res + err)
+
+    // fun register_function(name: String, callback: {(Pointer[None], Pointer[LuaDebug]): None})
 
     fun dispose() =>
         @lua_close[I32](_l)
