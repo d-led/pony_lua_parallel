@@ -70,11 +70,21 @@ actor Main
         let l = Lua
         l.register_function("pony_fibonacci", {(_l: Pointer[None]): I32 =>
             _env.out.print("Pony called from Lua")
-            let res = Fibonacci(10)
-            @lua_pushinteger[None](_l, res.i32())
+            let n = @lua_tointegerx[I32](_l, @lua_gettop[I32](_l), Pointer[None])
+            // some validation in Pony
+            if (n > U8.max_value().i32()) or (n < 0) then
+                @lua_pushstring[None](_l, (n.string() + " is out of range").cstring())
+                @lua_error[I32](_l)
+            else
+                let res = Fibonacci(n.u8())
+                @lua_pushinteger[None](_l, res.i32())
+            end
             I32(1) // return value count
         })
         (var res, var err) = l.run_string("return 'pony_fibonacci(10)='..pony_fibonacci(10)")
+        _env.out.print(res+err)
+        _env.out.print("Trying to pass invalid input to Pony")
+        (res, err) = l.run_string("return 'pony_fibonacci(-42)='..pony_fibonacci(-42)")
         _env.out.print(res+err)
 
 
@@ -180,8 +190,11 @@ class Lua
                 Debug.err("could not correlate the callback to a Pony function")
                 return 0
             end
+            // push the global onto the stack
             @lua_getglobal[I32](l, "this".cstring())
             let recovered_lua = @lua_touserdata[Lua](l, @lua_gettop[I32](l))
+            // pop the global from the stack
+            @lua_settop[None](l, -@lua_gettop[I32](l)-1)
             recovered_lua.callback(name, l)
         }, I32(1)) // 1 == 1 closure value
         @lua_setglobal[None](_l, name.cstring())
