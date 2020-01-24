@@ -127,8 +127,8 @@ actor Main
 
             I32(0)
         })
-        // valid input
-        (var res, var err) = l.run_string("
+
+        l.run_string("
             for i = 0, 12 do
                 send_work(i)
             end
