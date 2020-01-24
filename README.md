@@ -1,7 +1,8 @@
 # pony_lua_parallel
  using Pony to parallelize a single threaded C program (Lua)
 
-[![Build Status](https://travis-ci.org/d-led/pony_lua_parallel.svg?branch=master)](https://travis-ci.org/d-led/pony_lua_parallel)
+[![Build Status](https://travis-ci.org/d-led/pony_lua_parallel.svg?branch=master)](https://travis-ci.org/d-led/pony_lua_parallel) [![Build status](https://ci.appveyor.com/api/projects/status/wp5hcrquow7ye56p/branch/master?svg=true)](https://ci.appveyor.com/project/d-led/pony-lua-parallel/branch/master)
+
 
 ## Building and Running
 
@@ -22,8 +23,10 @@ See [main.pony](main.pony):
 
 ### CI
 
-Travis-CI runs on 1 virtual Core, thus parallelism effects cannot be observed there.
+- Travis-CI runs on 1 virtual core, thus parallelism effects cannot be observed there.
 
 ```
 Can't have --ponymaxthreads > physical cores, the number of threads you'd be running with (2 > 1)
 ```
+
+- Appveyor seems to run on more than 1 core, and thus some parallelism can be observed
