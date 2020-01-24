@@ -2,7 +2,7 @@ version: 1.0.{build}
 image: Visual Studio 2017
 install:
 - cmd: >-
-    cinst /y wget 7zip
+    cinst /y wget unzip
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
