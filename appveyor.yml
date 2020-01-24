@@ -2,11 +2,7 @@ version: 1.0.{build}
 image: Visual Studio 2017
 install:
 - cmd: >-
-    choco install wget
-
-    if %errorlevel% neq 0 exit /b %errorlevel%
-
-    choco install 7zip
+    cinst /y wget 7zip
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
@@ -16,9 +12,10 @@ install:
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
-    7z e ponyc-0.33.1-win64.zip
+    unzip --qq -o ponyc-0.33.1-win64.zip
 
     if %errorlevel% neq 0 exit /b %errorlevel%
+
 build_script:
 - cmd: >-
     set PATH=%PATH%;ponyc-0.33.1-win64\ponyc\bin
@@ -26,6 +23,7 @@ build_script:
     ponyc
 
     if %errorlevel% neq 0 exit /b %errorlevel%
+
 test_script:
 - cmd: >-
     set PATH=%PATH%;deps\lua\windows
