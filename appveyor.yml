@@ -2,7 +2,9 @@ version: 1.0.{build}
 image: Visual Studio 2017
 install:
 - cmd: >-
-    cinst /y wget 7zip
+    choco install wget
+    if %errorlevel% neq 0 exit /b %errorlevel%
+    choco install 7zip
     if %errorlevel% neq 0 exit /b %errorlevel%
     refreshenv
 
