@@ -1,0 +1,23 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+install:
+- cmd: >-
+    wget https://dl.bintray.com/pony-language/ponyc-win/ponyc-0.33.1-win64.zip
+    if %errorlevel% neq 0 exit /b %errorlevel%
+
+    unzip --qq ponyc-0.33.1-win64.zip
+    if %errorlevel% neq 0 exit /b %errorlevel%
+build_script:
+- cmd: >-
+    set PATH=%PATH%;ponyc-0.33.1-win64\ponyc\bin
+    ponyc
+    if %errorlevel% neq 0 exit /b %errorlevel%
+test_script:
+- cmd: >-
+    set PATH=%PATH%;deps\lua\windows
+
+    set MAX_NUM=30
+
+    pony_lua_parallel
+
+    if %errorlevel% neq 0 exit /b %errorlevel%
