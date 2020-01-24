@@ -4,8 +4,10 @@ install:
 - cmd: >-
     choco install wget
     if %errorlevel% neq 0 exit /b %errorlevel%
+
     choco install 7zip
     if %errorlevel% neq 0 exit /b %errorlevel%
+
     refreshenv
 
     wget https://dl.bintray.com/pony-language/ponyc-win/ponyc-0.33.1-win64.zip
