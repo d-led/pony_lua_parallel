@@ -1,6 +1,8 @@
 use "promises"
 use "cli"
 use "math"
+use "collections"
+use "itertools"
 
 actor Main
     let _env: Env
@@ -13,6 +15,7 @@ actor Main
         synchronous_demo()
         asynchronous_demo()
         c_code_calling_pony_demo()
+        lua_sending_messages_demo()
 
     fun ref configure() =>
         try
@@ -66,7 +69,7 @@ actor Main
         _env.out.print("main: done, waiting for promises")
 
     fun c_code_calling_pony_demo() =>
-        _env.out.print("calling pony from lua...")
+        _env.out.print("Calling Pony from Lua...")
         let l = Lua
 
         // register a Pony lambda as a lua function
@@ -96,3 +99,38 @@ actor Main
         _env.out.print("Trying to pass invalid input to Pony...")
         (res, err) = l.run_string("return 'pony_fibonacci(-42)='..pony_fibonacci(-42)")
         _env.out.print(res+err)
+
+    fun lua_sending_messages_demo() =>
+        _env.out.print("Sending messages to Pony actors from Lua ...")
+
+        let max_workers = USize(4)
+        let workers = Iter[USize].create(Range(0, max_workers))
+            .map[Worker]({(id) => Worker(_env, id.string()) })
+            .collect(Array[Worker](max_workers))
+
+
+        //
+        let l = Lua
+
+        //
+        l.register_function("send_work", {(_l: Pointer[None]): I32 =>
+            // get the expected single parameter (no parameter count check for now)
+            let n = @lua_tointegerx[I32](_l, @lua_gettop[I32](_l), Pointer[None])
+
+            let worker_id: USize = n.abs().usize() % max_workers
+
+            try
+                workers(worker_id)?.work(n.string())
+            else
+                _env.out.print("Wrong worker id: " + worker_id.string())
+            end
+
+            I32(0)
+        })
+        // valid input
+        (var res, var err) = l.run_string("
+            for i = 0, 12 do
+                send_work(i)
+            end
+            return 'ok'
+        ")
