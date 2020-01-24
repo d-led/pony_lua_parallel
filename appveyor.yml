@@ -2,6 +2,9 @@ version: 1.0.{build}
 image: Visual Studio 2017
 install:
 - cmd: >-
+    cinst /y wget unzip
+    if %errorlevel% neq 0 exit /b %errorlevel%
+
     wget https://dl.bintray.com/pony-language/ponyc-win/ponyc-0.33.1-win64.zip
     if %errorlevel% neq 0 exit /b %errorlevel%
 
