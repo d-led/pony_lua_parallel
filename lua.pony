@@ -111,6 +111,8 @@ class Lua
         _name_to_pony_function.update(name, cb)
         // track function in Lua
         @lua_pushstring[None](_l, name.cstring())
+        // https://www.lua.org/manual/5.3/manual.html#lua_pushcclosure
+        // the function name is available in the bound closure as an upvalue
         @lua_pushcclosure[None](_l, @{(l: Pointer[None]): I32 =>
             Debug.out("callback called")
             // https://github.com/lua/lua/blob/d7bb8df8414f71a290c8a4b1c9f7c6fe839a94df/lua.h#L44
