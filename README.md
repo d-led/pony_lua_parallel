@@ -1,7 +1,7 @@
 # pony_lua_parallel
  using Pony to parallelize a single threaded C program (Lua)
 
-[![Build Status](https://travis-ci.org/d-led/pony_lua_parallel.svg?branch=master)](https://travis-ci.org/d-led/pony_lua_parallel) [![Build status](https://ci.appveyor.com/api/projects/status/wp5hcrquow7ye56p/branch/master?svg=true)](https://ci.appveyor.com/project/d-led/pony-lua-parallel/branch/master)
+[![Build Status](https://travis-ci.com/d-led/pony_lua_parallel.svg?branch=master)](https://travis-ci.com/d-led/pony_lua_parallel) [![Build status](https://ci.appveyor.com/api/projects/status/wp5hcrquow7ye56p/branch/master?svg=true)](https://ci.appveyor.com/project/d-led/pony-lua-parallel/branch/master)
 
 ## Building and Running
 
