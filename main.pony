@@ -4,6 +4,13 @@ use "math"
 use "collections"
 use "itertools"
 
+// FFI
+use @lua_tointegerx[I32](l: Pointer[None], index: I32, isnum: Pointer[None])
+use @lua_gettop[I32](l: Pointer[None])
+use @lua_pushstring[None](l: Pointer[None], s: Pointer[U8] tag)
+use @lua_error[I32](l: Pointer[None])
+use @lua_pushinteger[None](l: Pointer[None], n: I32)
+
 actor Main
     let _env: Env
     var max_num: I32 = 40
@@ -77,15 +84,15 @@ actor Main
             _env.out.print("Pony called from Lua")
 
             // get the expected single parameter (no parameter count check for now)
-            let n = @lua_tointegerx[I32](_l, @lua_gettop[I32](_l), Pointer[None])
+            let n = @lua_tointegerx(_l, @lua_gettop(_l), Pointer[None])
 
             // perform some validation in Pony
             if (n > U8.max_value().i32()) or (n < 0) then
-                @lua_pushstring[None](_l, (n.string() + " is out of range").cstring())
-                @lua_error[I32](_l)
+                @lua_pushstring(_l, (n.string() + " is out of range").cstring())
+                @lua_error(_l)
             else
                 let res = Fibonacci(n.u8())
-                @lua_pushinteger[None](_l, res.i32())
+                @lua_pushinteger(_l, res.i32())
             end
 
             // return value count (here, 1: either an error, or a result)
@@ -115,7 +122,7 @@ actor Main
         //
         l.register_function("send_work", {(_l: Pointer[None]): I32 =>
             // get the expected single parameter (no parameter count check for now)
-            let n = @lua_tointegerx[I32](_l, @lua_gettop[I32](_l), Pointer[None])
+            let n = @lua_tointegerx(_l, @lua_gettop(_l), Pointer[None])
 
             let worker_id: USize = n.abs().usize() % max_workers
 

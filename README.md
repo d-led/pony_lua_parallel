@@ -7,13 +7,13 @@
 
 ### Docker
 
-```
+```bash
 docker-compose build --build-arg MAX_NUM=40
 ```
 
 ### Pony
 
-- Install Pony
+- Install [Pony](https://github.com/ponylang/corral)
 - `ponyc`
 - run `pony_lua_parallel`
 
