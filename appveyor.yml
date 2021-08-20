@@ -12,13 +12,13 @@ install:
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
-    unzip --qq -o ponyc-0.33.1-win64.zip
+    unzip --qq -o ponyc-x86-64-pc-windows-msvc.zip
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
 build_script:
 - cmd: >-
-    set PATH=%PATH%;ponyc-0.33.1-win64\ponyc\bin
+    set PATH=%PATH%;ponyc-x86-64-pc-windows-msvc\ponyc\bin
 
     ponyc
 
