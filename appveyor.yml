@@ -18,7 +18,7 @@ install:
 
 build_script:
 - cmd: >-
-    set PATH=%PATH%;ponyc-x86-64-pc-windows-msvc\ponyc\bin
+    set PATH=%PATH%;ponyc\bin
 
     ponyc
 
