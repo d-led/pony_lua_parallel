@@ -2,7 +2,7 @@ version: 1.0.{build}
 image: Visual Studio 2019
 install:
 - cmd: >-
-    cinst /y wget unzip
+    cinst /y wget 7zip
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
@@ -12,9 +12,7 @@ install:
 
     if %errorlevel% neq 0 exit /b %errorlevel%
 
-    cmd /c unzip --qq -o ponyc-x86-64-pc-windows-msvc.zip
-
-    dir
+    7z x -oponyc ponyc-x86-64-pc-windows-msvc.zip
 
 build_script:
 - cmd: >-
