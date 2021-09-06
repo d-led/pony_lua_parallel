@@ -15,7 +15,7 @@ re-run:
 
 ```bash
 docker-compose run -e MAX_NUM=40 pony
-
+```
 
 ### Pony
 
