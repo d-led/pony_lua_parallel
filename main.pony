@@ -30,6 +30,7 @@ actor Main
         end
 
     fun synchronous_demo() =>
+        _env.out.print("MAX_NUM="+max_num.string())
         _env.out.print("synchronous...")
         let stopwatch = Stopwatch
         // calculate the results in sequence
