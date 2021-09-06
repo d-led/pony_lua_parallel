@@ -11,6 +11,12 @@
 docker-compose build --build-arg MAX_NUM=40
 ```
 
+re-run:
+
+```bash
+docker-compose run -e MAX_NUM=40 pony
+
+
 ### Pony
 
 - Install [Pony](https://github.com/ponylang/corral)
